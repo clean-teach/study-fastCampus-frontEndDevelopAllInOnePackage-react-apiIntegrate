@@ -1,71 +1,40 @@
+import React, { useState } from 'react';
 import axios from 'axios';
-import React, { useEffect, useReducer } from 'react';
+import useAsync from './useAsync';
+import User from './User';
 
-function reducer(state, action) {
-    switch (action.type) {
-        case 'LOADING':
-            return {
-                data: null,
-                loading : true,
-                error: null,
-            }
-        case 'SUCCESS':
-            return {
-                data: action.data,
-                loading : false,
-                error: null,
-            }
-        case 'ERROR':
-            return {
-                data: null,
-                loading : false,
-                error: action.error,
-            }
-        default:
-            throw new Error('Unhandled action type: ' + action.type);
-    }
+async function getUsers() {
+    const response = await axios.get('https://jsonplaceholder.typicode.com/users');
+    // const response = await axios.get('https://jsonplaceholder.typicode.com/users/showmeerror'); // 에러발생 확인용
+
+    return response.data;
 }
 
 function Users() {
-    const [state, dispatch] = useReducer(reducer, {
-        data: null,
-        loading : false,
-        error: null,
-    });
-
-    const fetchUsers = async () => {
-        try {
-            dispatch({type: 'LOADING'});
-
-            const response = await axios.get('https://jsonplaceholder.typicode.com/users');
-            // const response = await axios.get('https://jsonplaceholder.typicode.com/users/showmeerror'); // 에러발생 확인용
-
-            dispatch({type: 'SUCCESS', data: response.data});
-        } catch(error) {
-            dispatch({type: 'ERROR', error});
-        }
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
+    const [state, refetch] = useAsync(getUsers, [], true);
     const {data: users, loading, error} = state;
+
+    const [userId, setUserId] = useState(null);
 
     if(loading) return <div>로딩중...</div>
     if(error) return <div>에러 발생!</div>
-    if(!users) return <div>검색 결과가 없습니다.</div>
 
     return (
         <>
-            <ul>
-                {users.map(user => (
-                    <li key={user.id}>
-                        {user.username} ({user.name})
-                    </li>
-                ))}
-            </ul>
-            <button onClick={fetchUsers}>다시 불러오기</button>
+            <button onClick={refetch}>불러오기</button>
+            <h2>사용자 리스트</h2>
+            {!users ? 
+                <div>검색 결과가 없습니다.</div>
+            :
+                <ul>
+                    {users.map(user => (
+                        <li key={user.id} onClick={() => setUserId(user.id)} style={{cursor: 'pointer'}}>
+                            {user.username} ({user.name})
+                        </li>
+                    ))}
+                </ul>
+            }
+            {userId && <User id={userId} />}
         </>
     );
 }

@@ -3,7 +3,10 @@ import Users from './Users';
 
 function App() {
   return (
-    <Users />
+    <>
+      <h1>API 연동하기</h1>
+      <Users />
+    </>
   );
 }
 
